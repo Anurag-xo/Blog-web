@@ -8,7 +8,6 @@ on:
       - 'README.md'
       - 'helm/**'
 
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -53,14 +52,22 @@ jobs:
           version: 'latest'
 
       - name: Configure kubectl
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG }}
         run: |
-          echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig
+          echo "$KUBE_CONFIG_DATA" | base64 --decode > kubeconfig
           export KUBECONFIG=$(pwd)/kubeconfig
 
+      - name: Start Kubernetes Port Forwarding
+        run: |
+          kubectl port-forward -n kube-system svc/kubernetes 8080:443 &
+      
       - name: Package Helm chart
         run: |
           helm package ./helm/blog-web-chart
 
       - name: Deploy to Kubernetes using Helm
+        env:
+          KUBECONFIG: ${{ github.workspace }}/kubeconfig
         run: |
           helm upgrade --install blog-web ./blog-web-chart-*.tgz --namespace production --values ./helm/blog-web-chart/values.yaml
