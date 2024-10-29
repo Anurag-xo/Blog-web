@@ -22,11 +22,11 @@ jobs:
 
       - name: Validate Kubernetes YAML files
         run: |
-          kubectl apply --dry-run=client -f Blog_website/k8s/manifests/deployment.yaml
-          kubectl apply --dry-run=client -f Blog_website/k8s/manifests/ingress.yaml
-          kubectl apply --dry-run=client -f Blog_website/k8s/manifests/mong-deployment.yaml
-          kubectl apply --dry-run=client -f Blog_website/k8s/manifests/mongo-service.yaml
-          kubectl apply --dry-run=client -f Blog_website/k8s/manifests/service.yaml
+          kubectl apply --dry-run=client -f k8s/manifests/deployment.yaml
+          kubectl apply --dry-run=client -f k8s/manifests/ingress.yaml
+          kubectl apply --dry-run=client -f k8s/manifests/mong-deployment.yaml
+          kubectl apply --dry-run=client -f k8s/manifests/mongo-service.yaml
+          kubectl apply --dry-run=client -f k8s/manifests/service.yaml
 
       - name: Set up Minikube
         run: |
@@ -46,11 +46,11 @@ jobs:
 
       - name: Apply Kubernetes Manifests
         run: |
-          kubectl apply -f Blog_website/k8s/manifests/deployment.yaml
-          kubectl apply -f Blog_website/k8s/manifests/ingress.yaml
-          kubectl apply -f Blog_website/k8s/manifests/mong-deployment.yaml
-          kubectl apply -f Blog_website/k8s/manifests/mongo-service.yaml
-          kubectl apply -f Blog_website/k8s/manifests/service.yaml
+          kubectl apply -f k8s/manifests/deployment.yaml
+          kubectl apply -f k8s/manifests/ingress.yaml
+          kubectl apply -f k8s/manifests/mong-deployment.yaml
+          kubectl apply -f k8s/manifests/mongo-service.yaml
+          kubectl apply -f k8s/manifests/service.yaml
 
       - name: Verify Deployment
         run: |
