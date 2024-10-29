@@ -7,6 +7,13 @@ on:
     paths-ignore:
       - 'README.md'
       - 'helm/**'
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+      - 'helm/**'
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -27,7 +34,18 @@ jobs:
 
     - name: Validate Kubernetes manifests
       run: |
-        kubeval --strict k8s/manifests/*.yaml
+        kubeval --kubernetes-version 1.24.0 \
+                --strict \
+                --ignore-missing-schemas \
+                --schema-location https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master \
+                k8s/manifests/*.yaml
+
+    - name: Validate with kubectl
+      run: |
+        for file in k8s/manifests/*.yaml; do
+          echo "Validating $file"
+          kubectl create --dry-run=client -f "$file" -o yaml > /dev/null
+        done
 
     - name: Lint Kubernetes manifests
       uses: azure/k8s-lint@v1
@@ -39,7 +57,6 @@ jobs:
           k8s/manifests/mongo-service.yaml
           k8s/manifests/service.yaml
 
-  # Optional: Add security scanning
   security-scan:
     runs-on: ubuntu-latest
     needs: validate
@@ -54,21 +71,51 @@ jobs:
         format: human
         exit-code: "0"
 
-  # Optional: Add test deployment to a test cluster
-  # test-deploy:
-  #   runs-on: ubuntu-latest
-  #   needs: [validate, security-scan]
-  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-  # 
-  #   steps:
-  #   - uses: actions/checkout@v4
-  # 
-  #   - name: Set up kubeconfig
-  #     uses: azure/k8s-set-context@v3
-  #     with:
-  #       method: kubeconfig
-  #       kubeconfig: ${{ secrets.KUBE_CONFIG }}
-  # 
-  #   - name: Deploy to test cluster
-  #     run: |
-  #       kubectl apply -f k8s/ 
+    - name: Run Trivy scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'config'
+        hide-progress: false
+        format: 'table'
+        exit-code: '1'
+        ignore-unfixed: true
+        severity: 'CRITICAL,HIGH'
+        scan-ref: 'k8s/manifests/'
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [validate, security-scan]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: staging
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up kubeconfig
+      uses: azure/k8s-set-context@v3
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG }}
+    
+    - name: Check cluster connection
+      run: kubectl cluster-info
+
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        kubectl apply -f k8s/manifests/ --namespace=staging
+        
+    - name: Verify deployment
+      run: |
+        echo "Verifying deployments..."
+        kubectl wait --for=condition=available --timeout=300s deployment/blog-web -n staging
+        kubectl wait --for=condition=available --timeout=300s deployment/mongo -n staging
+
+    - name: Deployment Status
+      if: always()
+      run: |
+        echo "Checking deployment status..."
+        kubectl get deployments -n staging
+        kubectl get pods -n staging
+        kubectl get services -n staging
+        kubectl get ingress -n staging
