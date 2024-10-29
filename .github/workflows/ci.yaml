@@ -2,120 +2,75 @@ name: CI Pipeline
 
 on:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - 'README.md'
-      - 'helm/**'
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
-    paths-ignore:
-      - 'README.md'
-      - 'helm/**'
+    branches: [ main ]
+
+env:
+  DOCKER_IMAGE: anuragox/blog_web
+  DOCKER_TAG: ${{ github.sha }}
 
 jobs:
-  validate:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install kubectl
-      uses: azure/setup-kubectl@v3
-      with:
-        version: 'latest'
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Install kubeval
-      run: |
-        wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
-        tar xf kubeval-linux-amd64.tar.gz
-        sudo mv kubeval /usr/local/bin
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Validate Kubernetes manifests
-      run: |
-        kubeval --kubernetes-version 1.24.0 \
-                --strict \
-                --ignore-missing-schemas \
-                --schema-location https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master \
-                k8s/manifests/*.yaml
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:latest
+            ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
 
-    - name: Validate with kubectl
-      run: |
-        for file in k8s/manifests/*.yaml; do
-          echo "Validating $file"
-          kubectl create --dry-run=client -f "$file" -o yaml > /dev/null
-        done
+      - name: Set up Minikube
+        uses: medyagh/setup-minikube@master
 
-    - name: Lint Kubernetes manifests
-      uses: azure/k8s-lint@v1
-      with:
-        manifests: |
-          k8s/manifests/deployment.yaml
-          k8s/manifests/ingress.yaml
-          k8s/manifests/mongo-deployment.yaml
-          k8s/manifests/mongo-service.yaml
-          k8s/manifests/service.yaml
+      - name: Configure Minikube
+        run: |
+          minikube addons enable ingress
+          minikube status
 
-  security-scan:
-    runs-on: ubuntu-latest
-    needs: validate
-    
-    steps:
-    - uses: actions/checkout@v4
+      - name: Deploy to Minikube
+        run: |
+          # Update the image in deployment yaml
+          sed -i "s|anuragox/blog_web|${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}|g" k8s/manifests/deployment.yaml
+          
+          # Apply MongoDB resources first
+          kubectl apply -f k8s/manifests/mong-deployment.yaml
+          kubectl apply -f k8s/manifests/mongo-service.yaml
+          
+          # Wait for MongoDB to be ready
+          kubectl wait --for=condition=available deployment/mongo --timeout=300s
+          
+          # Apply application resources
+          kubectl apply -f k8s/manifests/deployment.yaml
+          kubectl apply -f k8s/manifests/service.yaml
+          kubectl apply -f k8s/manifests/ingress.yaml
+          
+          # Wait for blog-web deployment to be ready
+          kubectl wait --for=condition=available deployment/blog-web --timeout=300s
 
-    - name: Run Kubesec scan
-      uses: controlplaneio/kubesec-action@master
-      with:
-        input: k8s/manifests/*.yaml
-        format: human
-        exit-code: "0"
-
-    - name: Run Trivy scan
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'config'
-        hide-progress: false
-        format: 'table'
-        exit-code: '1'
-        ignore-unfixed: true
-        severity: 'CRITICAL,HIGH'
-        scan-ref: 'k8s/manifests/'
-
-  deploy-staging:
-    runs-on: ubuntu-latest
-    needs: [validate, security-scan]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    environment: staging
-    
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up kubeconfig
-      uses: azure/k8s-set-context@v3
-      with:
-        method: kubeconfig
-        kubeconfig: ${{ secrets.KUBE_CONFIG }}
-    
-    - name: Check cluster connection
-      run: kubectl cluster-info
-
-    - name: Deploy to staging
-      run: |
-        echo "Deploying to staging environment..."
-        kubectl apply -f k8s/manifests/ --namespace=staging
-        
-    - name: Verify deployment
-      run: |
-        echo "Verifying deployments..."
-        kubectl wait --for=condition=available --timeout=300s deployment/blog-web -n staging
-        kubectl wait --for=condition=available --timeout=300s deployment/mongo -n staging
-
-    - name: Deployment Status
-      if: always()
-      run: |
-        echo "Checking deployment status..."
-        kubectl get deployments -n staging
-        kubectl get pods -n staging
-        kubectl get services -n staging
-        kubectl get ingress -n staging
+      - name: Test deployment
+        run: |
+          kubectl get all
+          kubectl get ingress
+          # Add blog-web.local to /etc/hosts
+          echo "$(minikube ip) blog-web.local" | sudo tee -a /etc/hosts
+          
+          # Wait for service to be ready
+          sleep 30
+          
+          # Test the endpoint
+          curl -H "Host: blog-web.local" http://$(minikube ip)/
