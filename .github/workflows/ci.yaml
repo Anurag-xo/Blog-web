@@ -27,7 +27,7 @@ jobs:
 
     - name: Validate Kubernetes manifests
       run: |
-        kubeval --strict k8s/*.yaml
+        kubeval --strict k8s/manifests/*.yaml
 
     - name: Lint Kubernetes manifests
       uses: azure/k8s-lint@v1
@@ -50,7 +50,7 @@ jobs:
     - name: Run Kubesec scan
       uses: controlplaneio/kubesec-action@master
       with:
-        input: k8s/*.yaml
+        input: k8s/manifests/*.yaml
         format: human
         exit-code: "0"
 
