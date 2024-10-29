@@ -1,3 +1,35 @@
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: blog-web
+#   labels:
+#     app: blog-web
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: blog-web
+#   template:
+#     metadata:
+#       labels:
+#         app: blog-web
+#     spec:
+#       initContainers:
+#       - name: wait-for-mongo
+#         image: busybox
+#         command: ['sh', '-c', until nc -z mongo 27017; do echo waiting for mongodb; sleep 2; done;']
+#       containers:
+#         - name: blog-web
+#           image: anuragox/blog_web
+#           ports:
+#             - containerPort: 5000
+#               name: http
+#           env:  # Add the environment variable section here
+#             - name: MONGODB_URI
+#               value: "mongodb://mongo:27017/blogDB?serverSelectionTimeoutMS=5000"
+
+
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,14 +48,31 @@ spec:
     spec:
       initContainers:
       - name: wait-for-mongo
-        image: busybox
-        command: ['sh', '-c', until nc -z mongo 27017; do echo waiting for mongodb; sleep 2; done;']
+        image: busybox:1.28
+        command: 
+        - 'sh'
+        - '-c'
+        - >
+          echo "Starting MongoDB check...";
+          attempt=1;
+          while [ $attempt -le 30 ]; do
+            if nc -w1 mongo 27017; then
+              echo "MongoDB is up!";
+              exit 0;
+            fi;
+            echo "Attempt $attempt: MongoDB not ready yet...";
+            attempt=$((attempt + 1));
+            sleep 2;
+          done;
+          echo "MongoDB did not become ready in time";
+          exit 1;
       containers:
         - name: blog-web
           image: anuragox/blog_web
+          imagePullPolicy: Always
           ports:
             - containerPort: 5000
               name: http
-          env:  # Add the environment variable section here
+          env:
             - name: MONGODB_URI
               value: "mongodb://mongo:27017/blogDB?serverSelectionTimeoutMS=5000"

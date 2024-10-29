@@ -37,66 +37,77 @@ jobs:
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
 
+      - name: Setup Kubernetes tools
+        run: |
+          minikube status
+          kubectl get nodes
+
       - name: Deploy MongoDB
         run: |
+          echo "Deploying MongoDB..."
+          kubectl delete deployment mongo --ignore-not-found
+          kubectl delete service mongo --ignore-not-found
           kubectl apply -f k8s/manifests/mong-deployment.yaml
           kubectl apply -f k8s/manifests/mongo-service.yaml
           
-          echo "Waiting for MongoDB to be ready..."
-          kubectl wait --for=condition=ready pod -l app=mongo --timeout=120s || true
+          echo "Waiting for MongoDB pod..."
+          kubectl wait --for=condition=ready pod -l app=mongo --timeout=180s
           
-          echo "MongoDB Pod Status:"
-          kubectl get pods -l app=mongo
+          echo "MongoDB Pod Details:"
+          kubectl get pods -l app=mongo -o wide
           kubectl describe pods -l app=mongo
 
-      - name: Test MongoDB Connectivity
+      - name: Verify MongoDB
         run: |
-          echo "MongoDB Service Status:"
-          kubectl get svc mongo
+          echo "MongoDB Service Details:"
+          kubectl get svc mongo -o wide
           
-          echo "Testing MongoDB DNS resolution..."
-          kubectl run test-dns --rm -it --image=busybox --restart=Never -- nslookup mongo || true
+          echo "MongoDB Logs:"
+          kubectl logs -l app=mongo
           
-          echo "Testing MongoDB connectivity..."
-          kubectl run test-mongo --rm -it --image=busybox --restart=Never -- nc -zv mongo 27017 || true
+          echo "Testing MongoDB connection..."
+          kubectl run test-mongo --rm -i --restart=Never --image=busybox:1.28 -- nc -zv mongo 27017
 
       - name: Deploy Blog Web
         run: |
+          echo "Deploying blog-web..."
+          kubectl delete deployment blog-web --ignore-not-found
+          kubectl delete service blog-web-service --ignore-not-found
+          
           kubectl apply -f k8s/manifests/deployment.yaml
           kubectl apply -f k8s/manifests/service.yaml
           
-          echo "Waiting for blog-web to be ready (max 2 minutes)..."
-          timeout 120s bash -c 'until kubectl get pods -l app=blog-web -o jsonpath="{.items[0].status.phase}" | grep -q "Running"; do 
-            echo "Waiting for pod to be running..."
+          echo "Waiting for blog-web deployment..."
+          for i in {1..30}; do
+            echo "Attempt $i: Checking pod status..."
             kubectl get pods -l app=blog-web
-            kubectl describe pods -l app=blog-web
-            sleep 10
-          done'
+            if kubectl wait --for=condition=ready pod -l app=blog-web --timeout=10s; then
+              echo "Pod is ready!"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "Pod failed to become ready"
+              kubectl describe pods -l app=blog-web
+              kubectl logs -l app=blog-web --all-containers=true
+              exit 1
+            fi
+            sleep 5
+          done
 
-      - name: Debug Deployment Status
+      - name: Debug Info
         if: always()
         run: |
           echo "=== All Resources ==="
           kubectl get all
           
-          echo "=== MongoDB Logs ==="
-          kubectl logs -l app=mongo --tail=100 || true
+          echo "=== MongoDB Status ==="
+          kubectl get pods -l app=mongo -o wide
+          kubectl logs -l app=mongo
           
-          echo "=== Blog Web Pod Status ==="
-          kubectl get pods -l app=blog-web
-          
-          echo "=== Blog Web Logs ==="
-          kubectl logs -l app=blog-web --all-containers=true || true
+          echo "=== Blog Web Status ==="
+          kubectl get pods -l app=blog-web -o wide
+          kubectl logs -l app=blog-web -c wait-for-mongo || true
+          kubectl logs -l app=blog-web -c blog-web || true
           
           echo "=== Events ==="
           kubectl get events --sort-by='.lastTimestamp'
-
-      - name: Verify Services
-        if: success()
-        run: |
-          echo "=== Service Endpoints ==="
-          kubectl get endpoints
-          
-          echo "=== Testing Blog Web Service ==="
-          # Try to access the service internally
-          kubectl run curl-test --image=curlimages/curl --rm -it --restart=Never -- curl -v http://blog-web-service || true
