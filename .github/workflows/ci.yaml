@@ -58,7 +58,7 @@ jobs:
           echo "$KUBE_CONFIG_DATA" | base64 --decode > kubeconfig
           export KUBECONFIG=$(pwd)/kubeconfig
 
-      - name: Package Helm chart
+      - name: Package Helm chart maybe
         run: |
           helm package ./helm/blog-web-chart
 
