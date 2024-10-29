@@ -51,7 +51,7 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Configure kubectl with Remote Kubeconfig
+      - name: Configure kubectl
         env:
           KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG }}
         run: |
@@ -63,7 +63,5 @@ jobs:
           helm package ./helm/blog-web-chart
 
       - name: Deploy to Kubernetes using Helm
-        env:
-          KUBECONFIG: ${{ github.workspace }}/kubeconfig
         run: |
           helm upgrade --install blog-web ./blog-web-chart-*.tgz --namespace production --values ./helm/blog-web-chart/values.yaml
