@@ -37,66 +37,40 @@ jobs:
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
 
-      - name: Deploy to Minikube
+      - name: Deploy and Debug
         run: |
-          # Update the image in deployment yaml
-          sed -i "s|anuragox/blog_web|${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}|g" k8s/manifests/deployment.yaml
-          
           # Apply MongoDB resources first
           kubectl apply -f k8s/manifests/mong-deployment.yaml
           kubectl apply -f k8s/manifests/mongo-service.yaml
           
-          # Debug MongoDB deployment
-          echo "Checking MongoDB pod status..."
+          echo "Waiting for MongoDB to be ready..."
+          kubectl wait --for=condition=ready pod -l app=mongo --timeout=300s
+          
+          echo "MongoDB Pod Status:"
           kubectl get pods -l app=mongo
-          kubectl describe pods -l app=mongo
           
-          # Wait for MongoDB to be ready with timeout
-          timeout 300s bash -c 'until kubectl get pods -l app=mongo -o jsonpath="{.items[0].status.phase}" | grep -q "Running"; do echo "Waiting for MongoDB pod..." && kubectl get pods -l app=mongo && sleep 10; done'
+          echo "MongoDB Service Status:"
+          kubectl get svc mongo
           
-          # Apply application resources
+          echo "Testing MongoDB DNS resolution..."
+          kubectl run test-dns --rm -it --image=busybox --restart=Never -- nslookup mongo || true
+          
+          echo "Testing MongoDB connectivity..."
+          kubectl run test-mongo --rm -it --image=busybox --restart=Never -- nc -zv mongo 27017 || true
+          
+          # Apply application deployments
           kubectl apply -f k8s/manifests/deployment.yaml
           kubectl apply -f k8s/manifests/service.yaml
           
-          # Debug blog-web deployment
-          echo "Checking blog-web pod status..."
+          echo "Waiting for blog-web to be ready..."
+          kubectl wait --for=condition=ready pod -l app=blog-web --timeout=300s
+          
+          echo "Blog Web Pod Status:"
           kubectl get pods -l app=blog-web
-          kubectl describe pods -l app=blog-web
           
-          # Wait for blog-web to be ready with timeout
-          timeout 300s bash -c 'until kubectl get pods -l app=blog-web -o jsonpath="{.items[0].status.phase}" | grep -q "Running"; do echo "Waiting for blog-web pod..." && kubectl get pods -l app=blog-web && sleep 10; done'
-
-      - name: Debug pod status if deployment fails
-        if: failure()
-        run: |
-          echo "=== MongoDB Pods ==="
-          kubectl get pods -l app=mongo -o wide
-          kubectl describe pods -l app=mongo
-          kubectl logs -l app=mongo --all-containers=true
+          # Show logs from both applications
+          echo "MongoDB Logs:"
+          kubectl logs -l app=mongo
           
-          echo "=== Blog Web Pods ==="
-          kubectl get pods -l app=blog-web -o wide
-          kubectl describe pods -l app=blog-web
-          kubectl logs -l app=blog-web --all-containers=true
-          
-          echo "=== All Resources ==="
-          kubectl get all
-          
-          echo "=== Events ==="
-          kubectl get events --sort-by='.lastTimestamp'
-
-      - name: Check MongoDB connectivity
-        if: failure()
-        run: |
-          # Test MongoDB connectivity from a test pod
-          kubectl run mongodb-test --rm -it --image=mongo:latest --restart=Never -- mongosh mongodb://mongo:27017/blogDB --eval "db.stats()"
-
-      - name: Verify Services
-        if: success()
-        run: |
-          echo "=== Service Endpoints ==="
-          kubectl get endpoints
-          kubectl get svc
-          
-          echo "=== Pod to Service DNS Resolution ==="
-          kubectl run curl --image=curlimages/curl --rm -it --restart=Never -- curl blog-web-service:80
+          echo "Blog Web Logs:"
+          kubectl logs -l app=blog-web
