@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog-web
+  labels:
+    app: blog-web
+spec:
+  replicas: {{ .Values.blogWeb.replicas }}
+  selector:
+    matchLabels:
+      app: blog-web
+  template:
+    metadata:
+      labels:
+        app: blog-web
+    spec:
+      initContainers:
+      - name: wait-for-mongo
+        image: appropriate/curl
+        command: ["sh", "-c", "until nc -z mongo 27017; do echo 'Waiting for MongoDB...'; sleep 2; done"]
+      # initContainers:
+      # - name: wait-for-mongo
+      #   image: busybox
+      #   command: ['sh', '-c', until nc -z mongodb 27017; do echo waiting for mongodb; sleep 2; done;']
+      containers:
+        - name: blog-web
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: 5000
+              name: http
+          env:  # Add the environment variable section here
+            - name: MONGODB_URI
+              value: "mongodb://mongo:27017/blogDB?serverSelectionTimeoutMS=5000"

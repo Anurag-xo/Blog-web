@@ -1,0 +1,21 @@
+replicaCount: 1
+
+# Image configuration for the blog-web application
+image:
+  repository: anuragox/blog_web
+  pullPolicy: IfNotPresent
+  tag: latest
+
+# MongoDB configuration
+mongo:
+  image:
+    repository: mongo
+    tag: latest
+  service:
+    port: 27017
+  
+# BLog web application configuration
+blogWeb:
+  replicas: 1
+  service:
+    port: 5000

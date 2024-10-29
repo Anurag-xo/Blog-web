@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog-web
+  labels:
+    app: blog-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blog-web
+  template:
+    metadata:
+      labels:
+        app: blog-web
+    spec:
+      initContainers:
+      - name: wait-for-mongo
+        image: busybox
+        command: ['sh', '-c', until nc -z mongodb 27017; do echo waiting for mongodb; sleep 2; done;']
+      containers:
+        - name: blog-web
+          image: anuragox/blog_web
+          ports:
+            - containerPort: 5000
+              name: http
+          env:  # Add the environment variable section here
+            - name: MONGODB_URI
+              value: "mongodb://mongo:27017/blogDB?serverSelectionTimeoutMS=5000"
