@@ -51,17 +51,29 @@ jobs:
         with:
           version: 'latest'
 
+      # Modified this section to ensure proper kubeconfig setup
       - name: Configure kubectl
-        env:
-          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG }}
         run: |
-          echo "$KUBE_CONFIG_DATA" | base64 --decode > kubeconfig
-          export KUBECONFIG=$(pwd)/kubeconfig
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
 
-      - name: Package Helm chart maybe
+      # Added step to verify cluster connection
+      - name: Verify Kubernetes connection
+        run: kubectl cluster-info
+
+      # Added namespace creation if it doesn't exist
+      - name: Create namespace if not exists
+        run: |
+          kubectl create namespace production --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Package Helm chart
         run: |
           helm package ./helm/blog-web-chart
 
       - name: Deploy to Kubernetes using Helm
         run: |
-          helm upgrade --install blog-web ./blog-web-chart-*.tgz --namespace production --values ./helm/blog-web-chart/values.yaml
+          helm upgrade --install blog-web ./blog-web-chart-*.tgz \
+            --namespace production \
+            --values ./helm/blog-web-chart/values.yaml \
+            --debug  # Added debug flag for better error reporting
