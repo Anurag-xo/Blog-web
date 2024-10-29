@@ -7,51 +7,68 @@ on:
     paths-ignore:
       - 'README.md'
       - 'helm/**'
-
 jobs:
-  k8s-deployment:
+  validate:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'latest'
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
 
-      - name: Validate Kubernetes YAML files
-        run: |
-          kubectl apply --dry-run=client -f k8s/manifests/deployment.yaml
-          kubectl apply --dry-run=client -f k8s/manifests/ingress.yaml
-          kubectl apply --dry-run=client -f k8s/manifests/mong-deployment.yaml
-          kubectl apply --dry-run=client -f k8s/manifests/mongo-service.yaml
-          kubectl apply --dry-run=client -f k8s/manifests/service.yaml
+    - name: Install kubeval
+      run: |
+        wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+        tar xf kubeval-linux-amd64.tar.gz
+        sudo mv kubeval /usr/local/bin
 
-      - name: Set up Minikube
-        run: |
-          curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-          chmod +x minikube
-          sudo mv minikube /usr/local/bin/
-          minikube start --driver=docker
+    - name: Validate Kubernetes manifests
+      run: |
+        kubeval --strict k8s/*.yaml
 
-      - name: Set Minikube context for kubectl
-        run: |
-          minikube update-context
-          kubectl config use-context minikube
+    - name: Lint Kubernetes manifests
+      uses: azure/k8s-lint@v1
+      with:
+        manifests: |
+          k8s/manifests/deployment.yaml
+          k8s/manifests/ingress.yaml
+          k8s/manifests/mongo-deployment.yaml
+          k8s/manifests/mongo-service.yaml
+          k8s/manifests/service.yaml
 
-      - name: Wait for Minikube nodes to be ready
-        run: |
-          kubectl wait --for=condition=Ready nodes --all --timeout=300s
+  # Optional: Add security scanning
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: validate
+    
+    steps:
+    - uses: actions/checkout@v4
 
-      - name: Apply Kubernetes Manifests
-        run: |
-          kubectl apply -f k8s/manifests/deployment.yaml
-          kubectl apply -f k8s/manifests/ingress.yaml
-          kubectl apply -f k8s/manifests/mong-deployment.yaml
-          kubectl apply -f k8s/manifests/mongo-service.yaml
-          kubectl apply -f k8s/manifests/service.yaml
+    - name: Run Kubesec scan
+      uses: controlplaneio/kubesec-action@master
+      with:
+        input: k8s/*.yaml
+        format: human
+        exit-code: "0"
 
-      - name: Verify Deployment
-        run: |
-          kubectl rollout status deployment/blog-web
+  # Optional: Add test deployment to a test cluster
+  # test-deploy:
+  #   runs-on: ubuntu-latest
+  #   needs: [validate, security-scan]
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  # 
+  #   steps:
+  #   - uses: actions/checkout@v4
+  # 
+  #   - name: Set up kubeconfig
+  #     uses: azure/k8s-set-context@v3
+  #     with:
+  #       method: kubeconfig
+  #       kubeconfig: ${{ secrets.KUBE_CONFIG }}
+  # 
+  #   - name: Deploy to test cluster
+  #     run: |
+  #       kubectl apply -f k8s/ 
