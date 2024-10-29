@@ -1,4 +1,4 @@
-name: CI Pipeline
+\name: CI Pipeline
 
 on:
   push:
@@ -37,18 +37,20 @@ jobs:
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
 
-      - name: Deploy and Debug
+      - name: Deploy MongoDB
         run: |
-          # Apply MongoDB resources first
           kubectl apply -f k8s/manifests/mong-deployment.yaml
           kubectl apply -f k8s/manifests/mongo-service.yaml
           
           echo "Waiting for MongoDB to be ready..."
-          kubectl wait --for=condition=ready pod -l app=mongo --timeout=300s
+          kubectl wait --for=condition=ready pod -l app=mongo --timeout=120s || true
           
           echo "MongoDB Pod Status:"
           kubectl get pods -l app=mongo
-          
+          kubectl describe pods -l app=mongo
+
+      - name: Test MongoDB Connectivity
+        run: |
           echo "MongoDB Service Status:"
           kubectl get svc mongo
           
@@ -57,20 +59,44 @@ jobs:
           
           echo "Testing MongoDB connectivity..."
           kubectl run test-mongo --rm -it --image=busybox --restart=Never -- nc -zv mongo 27017 || true
-          
-          # Apply application deployments
+
+      - name: Deploy Blog Web
+        run: |
           kubectl apply -f k8s/manifests/deployment.yaml
           kubectl apply -f k8s/manifests/service.yaml
           
-          echo "Waiting for blog-web to be ready..."
-          kubectl wait --for=condition=ready pod -l app=blog-web --timeout=300s
+          echo "Waiting for blog-web to be ready (max 2 minutes)..."
+          timeout 120s bash -c 'until kubectl get pods -l app=blog-web -o jsonpath="{.items[0].status.phase}" | grep -q "Running"; do 
+            echo "Waiting for pod to be running..."
+            kubectl get pods -l app=blog-web
+            kubectl describe pods -l app=blog-web
+            sleep 10
+          done'
+
+      - name: Debug Deployment Status
+        if: always()
+        run: |
+          echo "=== All Resources ==="
+          kubectl get all
           
-          echo "Blog Web Pod Status:"
+          echo "=== MongoDB Logs ==="
+          kubectl logs -l app=mongo --tail=100 || true
+          
+          echo "=== Blog Web Pod Status ==="
           kubectl get pods -l app=blog-web
           
-          # Show logs from both applications
-          echo "MongoDB Logs:"
-          kubectl logs -l app=mongo
+          echo "=== Blog Web Logs ==="
+          kubectl logs -l app=blog-web --all-containers=true || true
           
-          echo "Blog Web Logs:"
-          kubectl logs -l app=blog-web
+          echo "=== Events ==="
+          kubectl get events --sort-by='.lastTimestamp'
+
+      - name: Verify Services
+        if: success()
+        run: |
+          echo "=== Service Endpoints ==="
+          kubectl get endpoints
+          
+          echo "=== Testing Blog Web Service ==="
+          # Try to access the service internally
+          kubectl run curl-test --image=curlimages/curl --rm -it --restart=Never -- curl -v http://blog-web-service || true
