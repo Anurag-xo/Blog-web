@@ -28,11 +28,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t your-docker-repo/your-image-name:latest .
+          docker build -t anuragox/blog_web:latest .
 
       - name: Push Docker image
         run: |
-          docker push your-docker-repo/your-image-name:latest
+          docker push anuragox/blog_web:latest
 
   deploy:
     runs-on: ubuntu-latest
