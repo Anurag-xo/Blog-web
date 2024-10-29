@@ -37,18 +37,6 @@ jobs:
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
 
-      - name: Configure Minikube and wait for Ingress
-        run: |
-          minikube addons enable ingress
-          minikube status
-          
-          # Wait for the ingress controller pods to be ready
-          echo "Waiting for ingress-nginx pods to be ready..."
-          kubectl wait --namespace ingress-nginx \
-            --for=condition=ready pod \
-            --selector=app.kubernetes.io/component=controller \
-            --timeout=300s
-
       - name: Deploy to Minikube
         run: |
           # Update the image in deployment yaml
@@ -58,26 +46,57 @@ jobs:
           kubectl apply -f k8s/manifests/mong-deployment.yaml
           kubectl apply -f k8s/manifests/mongo-service.yaml
           
-          # Wait for MongoDB to be ready
-          kubectl wait --for=condition=available deployment/mongo --timeout=300s
+          # Debug MongoDB deployment
+          echo "Checking MongoDB pod status..."
+          kubectl get pods -l app=mongo
+          kubectl describe pods -l app=mongo
+          
+          # Wait for MongoDB to be ready with timeout
+          timeout 300s bash -c 'until kubectl get pods -l app=mongo -o jsonpath="{.items[0].status.phase}" | grep -q "Running"; do echo "Waiting for MongoDB pod..." && kubectl get pods -l app=mongo && sleep 10; done'
           
           # Apply application resources
           kubectl apply -f k8s/manifests/deployment.yaml
           kubectl apply -f k8s/manifests/service.yaml
           
-          # Wait for blog-web deployment to be ready
-          kubectl wait --for=condition=available deployment/blog-web --timeout=300s
+          # Debug blog-web deployment
+          echo "Checking blog-web pod status..."
+          kubectl get pods -l app=blog-web
+          kubectl describe pods -l app=blog-web
           
-          # Wait a bit more for the ingress controller to be fully ready
-          sleep 30
-          
-          # Apply ingress last
-          kubectl apply -f k8s/manifests/ingress.yaml
+          # Wait for blog-web to be ready with timeout
+          timeout 300s bash -c 'until kubectl get pods -l app=blog-web -o jsonpath="{.items[0].status.phase}" | grep -q "Running"; do echo "Waiting for blog-web pod..." && kubectl get pods -l app=blog-web && sleep 10; done'
 
-      - name: Test deployment
+      - name: Debug pod status if deployment fails
+        if: failure()
         run: |
+          echo "=== MongoDB Pods ==="
+          kubectl get pods -l app=mongo -o wide
+          kubectl describe pods -l app=mongo
+          kubectl logs -l app=mongo --all-containers=true
+          
+          echo "=== Blog Web Pods ==="
+          kubectl get pods -l app=blog-web -o wide
+          kubectl describe pods -l app=blog-web
+          kubectl logs -l app=blog-web --all-containers=true
+          
+          echo "=== All Resources ==="
           kubectl get all
-          kubectl get ingress
-          echo "$(minikube ip) blog-web.local" | sudo tee -a /etc/hosts
-          sleep 30
-          curl -H "Host: blog-web.local" http://$(minikube ip)/
+          
+          echo "=== Events ==="
+          kubectl get events --sort-by='.lastTimestamp'
+
+      - name: Check MongoDB connectivity
+        if: failure()
+        run: |
+          # Test MongoDB connectivity from a test pod
+          kubectl run mongodb-test --rm -it --image=mongo:latest --restart=Never -- mongosh mongodb://mongo:27017/blogDB --eval "db.stats()"
+
+      - name: Verify Services
+        if: success()
+        run: |
+          echo "=== Service Endpoints ==="
+          kubectl get endpoints
+          kubectl get svc
+          
+          echo "=== Pod to Service DNS Resolution ==="
+          kubectl run curl --image=curlimages/curl --rm -it --restart=Never -- curl blog-web-service:80
