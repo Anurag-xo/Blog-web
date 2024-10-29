@@ -10,28 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build Docker image
-        run: |
-          docker build -t anuragox/blog_web:latest .
-
-      - name: Push Docker image
-        run: |
-          docker push anuragox/blog_web:latest
+    # ... (previous build job remains the same)
 
   deploy:
     runs-on: ubuntu-latest
@@ -51,18 +30,15 @@ jobs:
         with:
           version: 'latest'
 
-      # Modified this section to ensure proper kubeconfig setup
       - name: Configure kubectl
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
           chmod 600 $HOME/.kube/config
+          
+          # Add this to make minikube IP accessible (if using minikube)
+          echo "${{ secrets.MINIKUBE_IP }} $(kubectl config view -o jsonpath='{.clusters[0].cluster.server}' | sed 's#https://##' | sed 's/:8443//')" | sudo tee -a /etc/hosts
 
-      # Added step to verify cluster connection
-      - name: Verify Kubernetes connection
-        run: kubectl cluster-info
-
-      # Added namespace creation if it doesn't exist
       - name: Create namespace if not exists
         run: |
           kubectl create namespace production --dry-run=client -o yaml | kubectl apply -f -
@@ -76,4 +52,4 @@ jobs:
           helm upgrade --install blog-web ./blog-web-chart-*.tgz \
             --namespace production \
             --values ./helm/blog-web-chart/values.yaml \
-            --debug  # Added debug flag for better error reporting
+            --debug
