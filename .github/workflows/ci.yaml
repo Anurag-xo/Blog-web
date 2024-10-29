@@ -37,10 +37,17 @@ jobs:
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
 
-      - name: Configure Minikube
+      - name: Configure Minikube and wait for Ingress
         run: |
           minikube addons enable ingress
           minikube status
+          
+          # Wait for the ingress controller pods to be ready
+          echo "Waiting for ingress-nginx pods to be ready..."
+          kubectl wait --namespace ingress-nginx \
+            --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller \
+            --timeout=300s
 
       - name: Deploy to Minikube
         run: |
@@ -57,20 +64,20 @@ jobs:
           # Apply application resources
           kubectl apply -f k8s/manifests/deployment.yaml
           kubectl apply -f k8s/manifests/service.yaml
-          kubectl apply -f k8s/manifests/ingress.yaml
           
           # Wait for blog-web deployment to be ready
           kubectl wait --for=condition=available deployment/blog-web --timeout=300s
+          
+          # Wait a bit more for the ingress controller to be fully ready
+          sleep 30
+          
+          # Apply ingress last
+          kubectl apply -f k8s/manifests/ingress.yaml
 
       - name: Test deployment
         run: |
           kubectl get all
           kubectl get ingress
-          # Add blog-web.local to /etc/hosts
           echo "$(minikube ip) blog-web.local" | sudo tee -a /etc/hosts
-          
-          # Wait for service to be ready
           sleep 30
-          
-          # Test the endpoint
           curl -H "Host: blog-web.local" http://$(minikube ip)/
