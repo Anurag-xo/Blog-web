@@ -51,17 +51,13 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Configure kubectl
+      - name: Configure kubectl with Remote Kubeconfig
         env:
           KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG }}
         run: |
           echo "$KUBE_CONFIG_DATA" | base64 --decode > kubeconfig
           export KUBECONFIG=$(pwd)/kubeconfig
 
-      - name: Start Kubernetes Port Forwarding
-        run: |
-          kubectl port-forward -n kube-system svc/kubernetes 8080:443 &
-      
       - name: Package Helm chart
         run: |
           helm package ./helm/blog-web-chart
