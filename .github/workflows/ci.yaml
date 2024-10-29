@@ -8,8 +8,6 @@ on:
       - 'README.md'
       - 'helm/**'
 
-name: Kubernetes CI
-
 jobs:
   k8s-deployment:
     runs-on: ubuntu-latest
@@ -41,6 +39,10 @@ jobs:
         run: |
           minikube update-context
           kubectl config use-context minikube
+
+      - name: Wait for Minikube nodes to be ready
+        run: |
+          kubectl wait --for=condition=Ready nodes --all --timeout=300s
 
       - name: Apply Kubernetes Manifests
         run: |
