@@ -82,6 +82,7 @@ jobs:
       env:
         TOKEN_GIT: ${{ secrets.TOKEN_GIT }} # Use the GitHub token for authentication
 
-    - name: Deploy Helm chart
-      run: |
-        helm upgrade --install blog-web ./helm/blog-web-chart/values.yaml --set image.tag=${{ github.sha }}
+# for deploying to kubernetes cluster but in this i have used minikube which runs locally so modify this according to your needs.
+    # - name: Deploy Helm chart
+    #   run: |
+    #     helm upgrade --install blog-web ./helm/blog-web-chart/values.yaml --set image.tag=${{ github.sha }}
