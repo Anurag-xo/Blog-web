@@ -67,7 +67,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Update Helm chart with new image tag
-      uses: Nextdoor/helm-set-image-tag-action@latest
+      uses: Nextdoor/helm-set-image-tag-action@main
       with:
         chart-path: ./helm/blog-web-chart/values.yaml
         image: anuragox/blog_web
