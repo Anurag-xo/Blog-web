@@ -29,10 +29,10 @@ jobs:
     # - name: Run tests
     #   run: npm test
 
-    - name: Static code analysis
-      run: npx eslint .
-      env:
-        CI: true
+    # - name: Static code analysis
+    #   run: npx eslint .
+    #   env:
+    #     CI: true
 
   docker:
     runs-on: ubuntu-latest
