@@ -65,15 +65,12 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.TOKEN_GIT }}
 
     - name: Update Helm chart with new image tag
-      uses: Nextdoor/helm-set-image-tag-action@main
-      with:
-        chart-path: ./helm/blog-web-chart/values.yaml
-        image: anuragox/blog_web
-        tag: ${{ github.sha }} # Use the commit SHA as the tag
-      env:
-        TOKEN_GIT: ${{ secrets.TOKEN_GIT }}
+      run: |
+        sed -i 's/tag: .*/tag: "${{github.sha}}"/' helm/blog-web-chart/values.yaml
 
     - name: Commit and push changes
       run: |
@@ -87,4 +84,4 @@ jobs:
 
     - name: Deploy Helm chart
       run: |
-        helm upgrade --install your-release-name ./helm/blog-web-chart/values.yaml --set image.tag=${{ github.sha }}
+        helm upgrade --install blog-web ./helm/blog-web-chart/values.yaml --set image.tag=${{ github.sha }}
