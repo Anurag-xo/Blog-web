@@ -4,13 +4,13 @@ replicaCount: 1
 image:
   repository: anuragox/blog_web
   pullPolicy: IfNotPresent
-  tag: "175680252a8fab942bba998f40de5bbfd4a96462"
+  tag: "a965dda577ac7c93531bb76dfd9cfe9eecd9491c"
 
 # MongoDB configuration
 mongo:
   image:
     repository: mongo
-    tag: "175680252a8fab942bba998f40de5bbfd4a96462"
+    tag: "a965dda577ac7c93531bb76dfd9cfe9eecd9491c"
   service:
     port: 27017
   
