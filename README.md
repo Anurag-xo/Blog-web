@@ -1,4 +1,3 @@
-````markdown
 # Blog-Web
 
 A simple yet robust blog website with CRUD functionality created with Node.js, Express, MongoDB, and EJS for templating. This project is designed to be easily deployable using Docker and Kubernetes, and it includes a CI/CD pipeline for automated testing and deployment.
@@ -32,7 +31,6 @@ Before you begin, ensure you have the following installed:
 git clone https://github.com/your-username/blog-web.git
 cd blog-web
 ```
-````
 
 ### 2. Install Dependencies
 
