@@ -6,18 +6,21 @@
     <title><%= locals.title %></title>
     <meta name="description" content="<%= locals.description %>">
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/default.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css"> <!-- SimpleMDE CSS -->
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script type="text/javascript" defer src="/js/script.js"></script>
-
-
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script> <!-- SimpleMDE JS -->
 </head>
 <body>
     <div class="container">
-
         <%- include('../partials/header_admin.ejs') %>
         <main class="main">
             <%- body %>
         </main>
         <%- include('../partials/footer.ejs') %>
     </div>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
 </body>
 </html>

@@ -6,11 +6,20 @@
 <form action="/add-post" method="POST">
 
   <label for="title"><b>Title</b></label>
-  <input type="text" placeholder="Post Title" name="title">
+  <input type="text" placeholder="Post Title" name="title" required>
 
   <label for="body"><b>Content</b></label>
-  <textarea name="body" cols="50" rows="10"></textarea>
+  <textarea id="markdown-editor" name="body" cols="50" rows="10"></textarea>
 
   <input type="submit" value="Add" class="btn">
 
 </form>
+
+<script>
+  // Initialize SimpleMDE
+  const simplemde = new SimpleMDE({
+    element: document.getElementById("markdown-editor"), // Target the textarea
+    spellChecker: false, // Disable spell checker (optional)
+    placeholder: "Write your blog post in Markdown...", // Add a placeholder
+  });
+</script>

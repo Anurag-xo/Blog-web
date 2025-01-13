@@ -14,8 +14,17 @@
   <input type="text" placeholder="Post Title" name="title" value="<%= data.title %>">
 
   <label for="body"><b>Content</b></label>
-  <textarea name="body" cols="50" rows="10"><%= data.body %></textarea>
+    <textarea id="markdown-editor" name="body" cols="50" rows="10" required><%= data.body %></textarea>
 
   <input type="submit" value="Update" class="btn">
 
 </form>
+
+<script>
+  // Initialize SimpleMDE
+  const simplemde = new SimpleMDE({
+    element: document.getElementById("markdown-editor"), // Target the textarea
+    spellChecker: false, // Disable spell checker (optional)
+    placeholder: "Write your blog post in Markdown...", // Add a placeholder
+  });
+</script>
