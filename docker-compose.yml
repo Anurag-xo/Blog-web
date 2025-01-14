@@ -22,5 +22,4 @@ services:
       - mongo_data:/data/db # Persist MongoDB data
 
 volumes:
-  - .:/app
-  - /app/node_modules
+  mongo_data:
