@@ -5,26 +5,25 @@ on:
     branches:
       - main
     paths-ignore:
-      - 'helm/**'
-      - 'k8s/**'
-      - 'README.md'
-    
+      - "helm/**"
+      - "k8s/**"
+      - "README.md"
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '14'
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "14"
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install dependencies
+        run: npm install
 
     # - name: Run tests
     #   run: npm test
@@ -40,22 +39,23 @@ jobs:
     needs: build
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Build Docker image
-      run: |
-        docker build -t anuragox/blog_web:${{ github.sha }} .
+      - name: Build Docker image
+        run: |
+          docker build -t anuragox/blog_web:${{ github.sha }} .
+          docker tag anuragox/blog_web:${{ github.sha }} anuragox/blog_web:latest            ############
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Push Docker image
-      run: |
-        docker push anuragox/blog_web:${{ github.sha }}
+      - name: Push Docker image
+        run: |
+          docker push anuragox/blog_web:${{ github.sha }}
 
   update-helm-chart:
     runs-on: ubuntu-latest
@@ -63,26 +63,35 @@ jobs:
     needs: docker
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.TOKEN_GIT }}
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.TOKEN_GIT }}
+      #######################   # new additon
+      - name: Install helm
+        run: |
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+          chmod 700 get_helm.sh
+          ./get_helm.sh
 
-    - name: Update Helm chart with new image tag
-      run: |
-        sed -i 's/tag: .*/tag: "${{github.sha}}"/' helm/blog-web-chart/values.yaml
+      - name: Lint Helm chart
+        run: helm lint ./helm/blog-web-chart
+      ####################
+      - name: Update Helm chart with new image tag
+        run: |
+          sed -i 's/tag: .*/tag: "${{github.sha}}"/' helm/blog-web-chart/values.yaml
 
-    - name: Commit and push changes
-      run: |
-        git config --global user.email "amnrag889@gmail.com"
-        git config --global user.name "anurag-xo"
-        git add ./helm/blog-web-chart/values.yaml
-        git commit -m "Update tag in Helm chart"
-        git push
-      env:
-        TOKEN_GIT: ${{ secrets.TOKEN_GIT }} # Use the GitHub token for authentication
+      - name: Commit and push changes
+        run: |
+          git config --global user.email "amnrag889@gmail.com"
+          git config --global user.name "anurag-xo"
+          git add ./helm/blog-web-chart/values.yaml
+          git commit -m "Update tag in Helm chart"
+          git push
+        env:
+          TOKEN_GIT: ${{ secrets.TOKEN_GIT }} # Use the GitHub token for authentication
 
 # for deploying to kubernetes cluster but in this i have used minikube which runs locally so modify this according to your needs.
-    # - name: Deploy Helm chart
-    #   run: |
-    #     helm upgrade --install blog-web ./helm/blog-web-chart/values.yaml --set image.tag=${{ github.sha }}
+# - name: Deploy Helm chart
+#   run: |
+#     helm upgrade --install blog-web ./helm/blog-web-chart/values.yaml --set image.tag=${{ github.sha }}

@@ -3,23 +3,24 @@ services:
   web:
     build: .
     ports:
-      - "5000:5000"  # Maps the container port 5000 to the host's port 5000
+      - "5000:5000" # Maps the container port 5000 to the host's port 5000
     environment:
       - PORT=5000
-      - MONGO_URI=mongodb://mongo:27017/blogDB  # Use MongoDB container for the database connection
+      - MONGODB_URI=mongodb://mongo:27017/blogDB # Use MongoDB container for the database connection
     depends_on:
-      - mongo  # Wait for MongoDB to start before the web app
+      - mongo # Wait for MongoDB to start before the web app
     volumes:
-      - .:/app  # Sync the current directory with the app directory inside the container
-      - /app/node_modules  # Avoid overwriting the node_modules folder
+      - .:/app # Sync the current directory with the app directory inside the container
+      - /app/node_modules # Avoid overwriting the node_modules folder
 
   # MongoDB database
   mongo:
-    image: mongo:latest  # Use the official MongoDB image from Docker Hub
+    image: mongo:latest # Use the official MongoDB image from Docker Hub
     ports:
-      - "27017:27017"  # Maps the container port 27017 to the host's port 27017
+      - "27017:27017" # Maps the container port 27017 to the host's port 27017
     volumes:
-      - mongo_data:/data/db  # Persist MongoDB data
+      - mongo_data:/data/db # Persist MongoDB data
 
 volumes:
-  mongo_data:
+  - .:/app
+  - /app/node_modules
