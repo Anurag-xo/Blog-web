@@ -1,3 +1,4 @@
+const Comment = require("../models/Comment");
 const express = require("express");
 const router = express.Router();
 const Post = require("../models/Post");
@@ -60,8 +61,19 @@ router.get("", async (req, res) => {
 router.get("/post/:id", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    const contentHtml = marked.parse(post.body); // Render Markdown with syntax highlighting
+    if (!post) {
+      return res.status(404).send("Post not found");
+    }
 
+    // Fetch comments for the post
+    const comments = await Comment.find({ postId: req.params.id }).populate(
+      "userId",
+    );
+
+    // Render Markdown content
+    const contentHtml = marked.parse(post.body);
+
+    // Render the post template with the post and comments
     res.render("post", {
       locals: {
         title: post.title,
@@ -70,15 +82,15 @@ router.get("/post/:id", async (req, res) => {
       data: {
         ...post._doc,
         body: contentHtml,
+        comments: comments, // Pass comments to the template
       },
       currentRoute: `/post/${req.params.id}`,
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).send("Internal Server Error");
   }
 });
-
 /**
  *  GET /
  *  Post :serachTerm

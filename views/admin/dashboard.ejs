@@ -1,26 +1,43 @@
+<!-- Posts Section -->
 <div class="admin-title">
-    <h2>Posts</h2>
-    <a href="/add-post" class="button">+ Add New</a>
-  </div>
-  
-  <ul class="admin-posts">
-  
-    <% data.forEach(post => { %>
-     
-      <li>
-        <a href="/post/<%= post._id %>">
-          <%= post.title %> &nearr;
-        </a>
-        <div class="admin-post-controls">
-          <a href="/edit-post/<%= post._id %>" class="btn">Edit</a>
-  
-          <form action="/delete-post/<%= post._id %>?_method=DELETE" method="POST">
-            <input type="submit" value="Delete" class="btn-delete btn">
-          </form>
-  
-        </div>
-  
-      </li>
-  
-    <% }) %>
-  </ul>
+  <h2>Posts</h2>
+  <a href="/add-post" class="button">+ Add New</a>
+</div>
+
+<ul class="admin-posts">
+  <% posts.forEach(post => { %>
+    <li>
+      <a href="/post/<%= post._id %>">
+        <%= post.title %> &nearr;
+      </a>
+      <div class="admin-post-controls">
+        <a href="/edit-post/<%= post._id %>" class="btn">Edit</a>
+        <form action="/delete-post/<%= post._id %>?_method=DELETE" method="POST">
+          <input type="submit" value="Delete" class="btn-delete btn">
+        </form>
+      </div>
+    </li>
+  <% }) %>
+</ul>
+
+<!-- Comments Section -->
+<div class="admin-title">
+  <h2>Comments</h2>
+</div>
+
+<ul class="admin-comments">
+  <% comments.forEach(comment => { %>
+    <li>
+      <p>
+        <strong>Post:</strong> <%= comment.postId ? comment.postId.title : 'Post Deleted' %><br>
+        <strong>User:</strong> <%= comment.userId ? comment.userId.username : 'Unknown User' %><br>
+        <strong>Comment:</strong> <%= comment.content %>
+      </p>
+      <div class="admin-comment-controls">
+        <form action="/delete-comment/<%= comment._id %>?_method=DELETE" method="POST">
+          <input type="submit" value="Delete" class="btn-delete btn">
+        </form>
+      </div>
+    </li>
+  <% }) %>
+</ul>

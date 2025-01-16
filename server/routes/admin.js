@@ -1,3 +1,4 @@
+const Comment = require("../models/Comment");
 const express = require("express");
 const router = express.Router();
 const Post = require("../models/Post");
@@ -82,14 +83,22 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
       description: "Simple Blog Created with NodeJs, Express & MongoDb.",
     };
 
-    const data = await Post.find();
+    const posts = await Post.find();
+
+    const comments = await Comment.find()
+      .populate("userId", "username")
+      .populate("postId", "title");
+
+    // const data = await Post.find();
     res.render("admin/dashboard", {
       locals,
-      data,
+      posts,
+      comments,
       layout: adminLayout,
     });
   } catch (error) {
     console.log(error);
+    res.status(500).send("Internal Server Error");
   }
 });
 
@@ -232,10 +241,21 @@ router.delete("/delete-post/:id", authMiddleware, async (req, res) => {
   }
 });
 
-/**
- * GET /
- * Admin Logout
- */
+router.delete("/delete-comments/:id", authMiddleware, async (req, res) => {
+  try {
+    await Comment.deleteOne({ _id: req.params.id });
+    req.flash("success", "Comment deleted succesfully!");
+    res.redirect("/dashboard");
+  } catch (error) {
+    console.log(errror);
+    req.flash("error", "Error deleting comment");
+    res.redirect("/dashboard");
+  }
+});
+
+// * GET /
+// * Admin Logout
+// */
 router.get("/logout", (req, res) => {
   res.clearCookie("token");
   //res.json({ message: 'Logout Successful.' });

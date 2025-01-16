@@ -682,3 +682,60 @@ img {
   color: var(--black);
   text-align: center;
 }
+
+/* Comment Section Styles */
+#comments {
+  margin-top: 20px;
+}
+
+.comment {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.comment p {
+  margin: 0;
+}
+
+.comment strong {
+  color: #333;
+}
+
+/* Admin Dashboard Styles */
+.admin-comments {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.admin-comments li {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.admin-comments li p {
+  margin: 0;
+}
+
+.admin-comment-controls {
+  margin-top: 10px;
+}
+
+.admin-comment-controls .btn-delete {
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.admin-comment-controls .btn-delete:hover {
+  background-color: #cc0000;
+}

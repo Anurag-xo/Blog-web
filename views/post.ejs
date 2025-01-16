@@ -1,4 +1,26 @@
 <h1><%= data.title %></h1>
 <article class="article">
-    <%- data.body %> <!-- Render the HTML content -->
+  <%- data.body %>
 </article>
+
+<h2>Comments</h2>
+<form action="/comment" method="POST">
+  <input type="hidden" name="postId" value="<%= data._id %>">
+  <textarea name="content" placeholder="Add a comment..." required></textarea>
+  <button type="submit">Submit</button>
+</form>
+
+<div id="comments">
+  <% if (data.comments && data.comments.length > 0) { %>
+    <% data.comments.forEach(comment => { %>
+      <div class="comment">
+        <p>
+          <strong><%= comment.userId ? comment.userId.username : "Unknown User" %></strong>: 
+          <%= comment.content %>
+        </p>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <p>No comments yet. Be the first to comment!</p>
+  <% } %>
+</div>
