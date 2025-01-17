@@ -241,7 +241,7 @@ router.delete("/delete-post/:id", authMiddleware, async (req, res) => {
   }
 });
 
-router.delete("/delete-comments/:id", authMiddleware, async (req, res) => {
+router.delete("/delete-comment/:id", authMiddleware, async (req, res) => {
   try {
     await Comment.deleteOne({ _id: req.params.id });
     req.flash("success", "Comment deleted succesfully!");
