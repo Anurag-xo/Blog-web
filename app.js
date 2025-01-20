@@ -10,6 +10,7 @@ const MongoStore = require("connect-mongo");
 const bcrypt = require("bcrypt");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const compression = require("compression");
 
 const connectDB = require("./server/config/db");
 const { isActiveRoute } = require("./server/helpers/routeHelpers");
@@ -28,6 +29,8 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(methodOverride("_method"));
 app.use(flash());
+app.use(compression());
+app.use(express.static("public", { maxAge: "1y" })); // Cache static files for 1 yeear
 
 // Session configuration
 app.use(

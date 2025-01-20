@@ -13,6 +13,8 @@
   "description": "",
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "bull": "^4.16.5",
+    "compression": "^1.7.5",
     "connect-mongo": "^5.1.0",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.5",
@@ -28,7 +30,8 @@
     "mongoose": "^8.7.1",
     "nodemailer": "^6.9.16",
     "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0"
+    "passport-google-oauth20": "^2.0.0",
+    "redis": "^4.7.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"

@@ -5,6 +5,7 @@ const Post = require("../models/Post");
 const marked = require("marked");
 const hljs = require("highlight.js");
 const nodemailer = require("nodemailer");
+const emailQueue = require("../queue/emailQueue");
 
 marked.setOptions({
   highlight: function (code, language) {
@@ -32,10 +33,12 @@ router.get("", async (req, res) => {
       page = 1;
     }
 
-    const data = await Post.aggregate([{ $sort: { createdAt: -1 } }])
-      .skip(perPage * (page - 1))
+    const posts = await Post.find()
+      .select("title createdAt")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * perPage)
       .limit(perPage)
-      .exec();
+      .lean();
 
     const count = await Post.countDocuments({});
     const nextPage = parseInt(page) + 1;
@@ -43,13 +46,14 @@ router.get("", async (req, res) => {
 
     res.render("index", {
       locals,
-      data,
+      data: posts,
       current: page,
       nextPage: hasNextPage ? nextPage : null,
       currentRoute: "/",
     });
   } catch (error) {
-    console.log(error);
+    console.error("Error fetching posts:", error);
+    res.status(500).render("error", { message: "Internal Server Error" });
   }
 });
 
@@ -172,6 +176,20 @@ router.post("/contact", async (req, res) => {
     console.error("Error sending email:", error);
     res.status(500).send("Failed to send message.");
   }
+});
+
+// routes/main.js
+const cache = require("../middleware/cache");
+
+router.get("/", cache("homepage"), async (req, res) => {
+  const posts = await Post.find().lean();
+  res.json(posts);
+});
+
+router.post("/contact", async (req, res) => {
+  const { name, email, message } = req.body;
+  await emailQueue.add({ name, email, messgae });
+  res.status(200).send("Message sent successfully!");
 });
 
 module.exports = router;
