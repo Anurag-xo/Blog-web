@@ -22,5 +22,5 @@ spec:
               mountPath: /data/db
       volumes:
         - name: mongo-data
-          presistentVolumeClaim:
+          persistentVolumeClaim:
             claimName: mongo-pvc

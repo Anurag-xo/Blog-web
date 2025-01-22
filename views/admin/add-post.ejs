@@ -16,10 +16,11 @@
 </form>
 
 <script>
-  // Initialize SimpleMDE
-  const simplemde = new SimpleMDE({
-    element: document.getElementById("markdown-editor"), // Target the textarea
-    spellChecker: false, // Disable spell checker (optional)
-    placeholder: "Write your blog post in Markdown...", // Add a placeholder
+  document.addEventListener("DOMContentLoaded", function () {
+    const simplemde = new SimpleMDE({
+      element: document.getElementById("markdown-editor"),
+      spellChecker: false,
+      placeholder: "Write your blog post in Markdown...",
+    });
   });
 </script>

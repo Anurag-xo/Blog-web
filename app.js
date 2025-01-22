@@ -42,7 +42,7 @@ app.use(
     resave: false,
     saveUninitialized: true,
     store: MongoStore.create({
-      mongoUrl: process.env.MONGODB_URI, // Ensure this is correct
+      mongoUrl: process.env.MONGODB_URI || "mongodb://localhost:27017/blogDB",
     }),
     cookie: { maxAge: 1000 * 60 * 24 },
   }),
