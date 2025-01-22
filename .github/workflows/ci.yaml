@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - feature
+      - main
 
 jobs:
   build:
@@ -57,6 +57,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_PUBLIC_IP }} "
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY }}
             docker pull ${{ secrets.ECR_REPOSITORY }}:latest
+            cd /home/ec2-user/Blog-web  # Navigate to the correct directory
             docker-compose down
             docker-compose up -d
           "
