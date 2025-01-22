@@ -3,11 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - feature
-    paths-ignore:
-      - "helm/**"
-      - "k8s/**"
-      - "README.md"
+      - main
 
 jobs:
   build:
@@ -31,6 +27,8 @@ jobs:
       - name: Log in to ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+        with:
+          region: ${{ secrets.AWS_REGION }} # Add this line
 
       - name: Push Docker image to ECR
         run: |
@@ -57,36 +55,3 @@ jobs:
             docker-compose down
             docker-compose up -d
           "
-
-  update-helm-chart:
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.TOKEN_GIT }}
-
-      - name: Install Helm
-        run: |
-          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-          chmod 700 get_helm.sh
-          ./get_helm.sh
-
-      - name: Lint Helm chart
-        run: helm lint ./helm/blog-web-chart
-
-      - name: Update Helm chart with new image tag
-        run: |
-          sed -i 's/tag: .*/tag: "${{github.sha}}"/' helm/blog-web-chart/values.yaml
-
-      - name: Commit and push changes
-        run: |
-          git config --global user.email "amnrag889@gmail.com"
-          git config --global user.name "anurag-xo"
-          git add ./helm/blog-web-chart/values.yaml
-          git commit -m "Update tag in Helm chart"
-          git push
-        env:
-          TOKEN_GIT: ${{ secrets.TOKEN_GIT }}
