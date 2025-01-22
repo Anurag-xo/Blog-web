@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI
 
 on:
   push:
@@ -20,55 +20,55 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18"
+          node-version: "14"
 
       - name: Install dependencies
         run: npm install
 
-      - name: Build Docker image
-        run: docker build -t ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }} .
+    # - name: Run tests
+    #   run: npm test
 
-      - name: Log in to ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+    # - name: Static code analysis
+    #   run: npx eslint .
+    #   env:
+    #     CI: true
 
-      - name: Push Docker image to ECR
-        run: |
-          docker tag ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }} ${{ secrets.ECR_REPOSITORY }}:latest
-          docker push ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
-          docker push ${{ secrets.ECR_REPOSITORY }}:latest
-
-  deploy:
+  docker:
     runs-on: ubuntu-latest
+
     needs: build
 
     steps:
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Deploy to EC2
+      - name: Build Docker image
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_PUBLIC_IP }} "
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY }}
-            docker pull ${{ secrets.ECR_REPOSITORY }}:latest
-            docker-compose down
-            docker-compose up -d
-          "
+          docker build -t anuragox/blog_web:${{ github.sha }} .
+          docker tag anuragox/blog_web:${{ github.sha }} anuragox/blog_web:latest            ############
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Docker image
+        run: |
+          docker push anuragox/blog_web:${{ github.sha }}
 
   update-helm-chart:
     runs-on: ubuntu-latest
-    needs: build
+
+    needs: docker
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.TOKEN_GIT }}
-
-      - name: Install Helm
+      #######################   # new additon
+      - name: Install helm
         run: |
           curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
           chmod 700 get_helm.sh
@@ -76,7 +76,7 @@ jobs:
 
       - name: Lint Helm chart
         run: helm lint ./helm/blog-web-chart
-
+      ####################
       - name: Update Helm chart with new image tag
         run: |
           sed -i 's/tag: .*/tag: "${{github.sha}}"/' helm/blog-web-chart/values.yaml
@@ -89,4 +89,9 @@ jobs:
           git commit -m "Update tag in Helm chart"
           git push
         env:
-          TOKEN_GIT: ${{ secrets.TOKEN_GIT }}
+          TOKEN_GIT: ${{ secrets.TOKEN_GIT }} # Use the GitHub token for authentication
+
+# for deploying to kubernetes cluster but in this i have used minikube which runs locally so modify this according to your needs.
+# - name: Deploy Helm chart
+#   run: |
+#     helm upgrade --install blog-web ./helm/blog-web-chart/values.yaml --set image.tag=${{ github.sha }}
