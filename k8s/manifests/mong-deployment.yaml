@@ -13,7 +13,14 @@ spec:
         app: mongo
     spec:
       containers:
-      - name: mongo
-        image: mongo:latest
-        ports:
-        - containerPort: 27017
+        - name: mongo
+          image: mongo:latest
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: mongo-data
+              mountPath: /data/db
+      volumes:
+        - name: mongo-data
+          presistentVolumeClaim:
+            claimName: mongo-pvc

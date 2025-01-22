@@ -1,7 +1,9 @@
 const redis = require("redis");
 const { promisify } = require("util");
 
-const client = redis.createClient();
+const client = redis.createClient({
+  url: process.env.REDIS_URL || "redis://127.0.0.1:6379",
+});
 const getAsync = promisify(client.get).bind(client);
 const setAsync = promisify(client.set).bind(client);
 

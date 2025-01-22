@@ -20,4 +20,4 @@ ENV PORT=5000
 EXPOSE 5000
 
 # Start the Node.js application
-CMD ["npm", "run", "dev" ]
+CMD ["npm", "start" ]

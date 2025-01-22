@@ -13,9 +13,10 @@ mongo:
     tag: "4663c3bfc9d75cfe3c8ac0d964e7cdb413de13a4"
   service:
     port: 27017
-  
+
 # BLog web application configuration
 blogWeb:
   replicas: 1
   service:
     port: 5000
+

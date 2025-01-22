@@ -30,8 +30,11 @@ app.use(cookieParser());
 app.use(methodOverride("_method"));
 app.use(flash());
 app.use(compression());
-app.use(express.static("public", { maxAge: "1y" })); // Cache static files for 1 yeear
-
+app.use(
+  express.static("public", {
+    maxAge: process.env.NODE_ENV === "production" ? "1y" : "0",
+  }),
+);
 // Session configuration
 app.use(
   session({
