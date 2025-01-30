@@ -66,6 +66,8 @@ To run the application using Docker, use the provided `docker-compose.yml` file:
 docker-compose up --build
 ```
 
+- Note: To run the docker container locally use the "docker-compose.yml.bak" file and rename it to "docker-compose.yml".
+
 This will start the Node.js application and a MongoDB instance. The application will be available at `http://localhost:5000`.
 
 ### 6. Kubernetes Deployment
