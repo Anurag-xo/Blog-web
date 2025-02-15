@@ -20,3 +20,5 @@ if [ $? -eq 0 ]; then
 else
     echo "Failed to start the application."
 fi
+
+
