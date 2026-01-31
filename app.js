@@ -94,7 +94,7 @@ app.locals.isActiveRoute = isActiveRoute;
 
 // Routes
 app.use("/", require("./server/routes/main"));
-app.use("/", require("./server/routes/admin"));
+app.use("/admin", require("./server/routes/admin"));
 
 // OAuth Routes
 app.get(
