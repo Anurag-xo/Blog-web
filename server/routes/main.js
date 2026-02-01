@@ -74,6 +74,12 @@ router.get("/post/:id", async (req, res) => {
       "userId",
     );
 
+    // Fetch related posts (latest 5, excluding the current one)
+    const relatedPosts = await Post.find({ _id: { $ne: req.params.id } })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean();
+
     // Render Markdown content
     const contentHtml = marked.parse(post.body);
 
@@ -88,13 +94,36 @@ router.get("/post/:id", async (req, res) => {
         body: contentHtml,
         comments: comments, // Pass comments to the template
       },
+      relatedPosts: relatedPosts,
       currentRoute: `/post/${req.params.id}`,
     });
-  } catch (error) {
+  }
+  catch (error) {
     console.error(error);
     res.status(500).send("Internal Server Error");
   }
 });
+
+/**
+ * POST /
+ * Post :id/like
+ */
+router.post("/post/:id/like", async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).send("Post not found");
+    }
+    post.likes++;
+    await post.save();
+    res.redirect(`/post/${req.params.id}`);
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 /**
  *  GET /
  *  Post :serachTerm
@@ -122,7 +151,8 @@ router.post("/search", async (req, res) => {
       locals,
       currentRoute: "/",
     });
-  } catch (error) {
+  }
+  catch (error) {
     console.log(error);
   }
 });
@@ -172,19 +202,14 @@ router.post("/contact", async (req, res) => {
     // Send the email
     await transporter.sendMail(mailOptions);
     res.status(200).send("Message sent successfully!");
-  } catch (error) {
+  }
+  catch (error) {
     console.error("Error sending email:", error);
     res.status(500).send("Failed to send message.");
   }
 });
 
-// routes/main.js
-const cache = require("../middleware/cache");
 
-router.get("/", cache("homepage"), async (req, res) => {
-  const posts = await Post.find().lean();
-  res.json(posts);
-});
 
 router.post("/contact", async (req, res) => {
   const { name, email, message } = req.body;
