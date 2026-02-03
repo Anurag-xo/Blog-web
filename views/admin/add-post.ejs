@@ -1,19 +1,24 @@
-<a href="/dashboard">&larr; Back</a>
-<div class="admin-title">
-  <h2>Add New Post</h2>
+<div class="container mt-5">
+    <div class="hero-section text-center text-white bg-dark py-5 rounded mb-4">
+        <h1 class="display-4 fw-bold">Add New Post</h1>
+    </div>
+    <a href="/dashboard" class="btn btn-outline-primary mb-4">&larr; Back to Dashboard</a>
+    <div class="card post-card shadow-sm">
+        <div class="card-body p-5">
+            <form action="/admin/add-post" method="POST">
+                <div class="mb-3">
+                    <label for="title" class="form-label"><b>Title</b></label>
+                    <input type="text" class="form-control" id="title" placeholder="Post Title" name="title" required>
+                </div>
+                <div class="mb-3">
+                    <label for="body" class="form-label"><b>Content</b></label>
+                    <textarea id="markdown-editor" class="form-control" name="body" cols="50" rows="10"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Post</button>
+            </form>
+        </div>
+    </div>
 </div>
-
-<form action="/add-post" method="POST">
-
-  <label for="title"><b>Title</b></label>
-  <input type="text" placeholder="Post Title" name="title" required>
-
-  <label for="body"><b>Content</b></label>
-  <textarea id="markdown-editor" name="body" cols="50" rows="10"></textarea>
-
-  <input type="submit" value="Add" class="btn">
-
-</form>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
