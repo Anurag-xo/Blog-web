@@ -1,43 +1,51 @@
-<!-- Posts Section -->
-<div class="admin-title">
-  <h2>Posts</h2>
-  <a href="/add-post" class="button">+ Add New</a>
+<div class="container mt-5">
+    <div class="hero-section text-center text-white bg-dark py-5 rounded mb-4">
+        <h1 class="display-4 fw-bold">Admin Dashboard</h1>
+        <a href="/add-post" class="btn btn-primary btn-lg mt-3"><i class="fas fa-plus"></i> Add New Post</a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card post-card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">Posts</h2>
+                    <ul class="list-group list-group-flush">
+                        <% posts.forEach(post => { %>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <a href="/post/<%= post._id %>" class="text-decoration-none"><%= post.title %> &nearr;</a>
+                                <div class="admin-post-controls">
+                                    <a href="/edit-post/<%= post._id %>" class="btn btn-sm btn-outline-primary">Edit</a>
+                                    <form action="/delete-post/<%= post._id %>?_method=DELETE" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </li>
+                        <% }) %>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card post-card shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title">Comments</h2>
+                    <ul class="list-group list-group-flush">
+                        <% comments.forEach(comment => { %>
+                            <li class="list-group-item">
+                                <p>
+                                    <strong>Post:</strong> <%= comment.postId ? comment.postId.title : 'Post Deleted' %><br>
+                                    <strong>User:</strong> <%= comment.userId ? comment.t.username : 'Unknown User' %><br>
+                                    <strong>Comment:</strong> <%= comment.content %>
+                                </p>
+                                <div class="admin-comment-controls">
+                                    <form action="/delete-comment/<%= comment._id %>?_method=DELETE" method="POST">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </li>
+                        <% }) %>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-
-<ul class="admin-posts">
-  <% posts.forEach(post => { %>
-    <li>
-      <a href="/post/<%= post._id %>">
-        <%= post.title %> &nearr;
-      </a>
-      <div class="admin-post-controls">
-        <a href="/edit-post/<%= post._id %>" class="btn">Edit</a>
-        <form action="/delete-post/<%= post._id %>?_method=DELETE" method="POST">
-          <input type="submit" value="Delete" class="btn-delete btn">
-        </form>
-      </div>
-    </li>
-  <% }) %>
-</ul>
-
-<!-- Comments Section -->
-<div class="admin-title">
-  <h2>Comments</h2>
-</div>
-
-<ul class="admin-comments">
-  <% comments.forEach(comment => { %>
-    <li>
-      <p>
-        <strong>Post:</strong> <%= comment.postId ? comment.postId.title : 'Post Deleted' %><br>
-        <strong>User:</strong> <%= comment.userId ? comment.userId.username : 'Unknown User' %><br>
-        <strong>Comment:</strong> <%= comment.content %>
-      </p>
-      <div class="admin-comment-controls">
-        <form action="/delete-comment/<%= comment._id %>?_method=DELETE" method="POST">
-          <input type="submit" value="Delete" class="btn-delete btn">
-        </form>
-      </div>
-    </li>
-  <% }) %>
-</ul>
