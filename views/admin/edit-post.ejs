@@ -1,30 +1,36 @@
-<a href="/dashboard">&larr; Back</a>
-<div class="admin-title">
-  <h2>View / Edit Post</h2>
-
-  <form action="/delete-post/<%= data._id %>?_method=DELETE" method="POST">
-    <input type="submit" value="Delete" class="btn-delete btn">
-  </form>
-
+<div class="container mt-5">
+    <div class="hero-section text-center text-white bg-dark py-5 rounded mb-4">
+        <h1 class="display-4 fw-bold">View / Edit Post</h1>
+    </div>
+    <a href="/dashboard" class="btn btn-outline-primary mb-4">&larr; Back to Dashboard</a>
+    <div class="card post-card shadow-sm">
+        <div class="card-body p-5">
+            <div class="d-flex justify-content-end mb-4">
+                <form action="/delete-post/<%= data._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Are you sure you want to delete this post?');">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+            <form action="/edit-post/<%= data._id %>?_method=PUT" method="POST">
+                <div class="mb-3">
+                    <label for="title" class="form-label"><b>Title</b></label>
+                    <input type="text" class="form-control" id="title" placeholder="Post Title" name="title" value="<%= data.title %>">
+                </div>
+                <div class="mb-3">
+                    <label for="body" class="form-label"><b>Content</b></label>
+                    <textarea id="markdown-editor" class="form-control" name="body" cols="50" rows="10" required><%= data.body %></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Update Post</button>
+            </form>
+        </div>
+    </div>
 </div>
 
-<form action="/edit-post/<%= data._id %>?_method=PUT" method="POST">
-
-  <label for="title"><b>Title</b></label>
-  <input type="text" placeholder="Post Title" name="title" value="<%= data.title %>">
-
-  <label for="body"><b>Content</b></label>
-    <textarea id="markdown-editor" name="body" cols="50" rows="10" required><%= data.body %></textarea>
-
-  <input type="submit" value="Update" class="btn">
-
-</form>
-
 <script>
-  // Initialize SimpleMDE
-  const simplemde = new SimpleMDE({
-    element: document.getElementById("markdown-editor"), // Target the textarea
-    spellChecker: false, // Disable spell checker (optional)
-    placeholder: "Write your blog post in Markdown...", // Add a placeholder
+  document.addEventListener("DOMContentLoaded", function () {
+    const simplemde = new SimpleMDE({
+      element: document.getElementById("markdown-editor"),
+      spellChecker: false,
+      placeholder: "Write your blog post in Markdown...",
+    });
   });
 </script>
