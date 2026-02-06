@@ -1,26 +1,30 @@
-<div class="author">
-    <h1 class="author__heading">Hi, I am Anurag.</h1>
-    <p class="author__body">Devops and Cybersecurity enthusiast.</p>
-  </div>
-  
-  <img src="/img/hero-image.webp" alt="person looking out through window" class="hero-image" width="981" height="528">
-  
-  <section class="articles">
-    <h2 class="articles__heading">Latest Posts</h2>
-  
-    <ul class="article-ul">
-      <% data.forEach(post => { %>
-        <li>
-          <a href="/post/<%= post._id %>">
-            <span><%= post.title %></span>
-            <span class="article-list__date"><%= post.createdAt.toDateString() %></span>
-          </a>
-        </li>
-      <% }) %>
-    </ul>
+<div class="hero-section text-center text-white bg-dark py-5">
+    <div class="container">
+        <h1 class="display-3 fw-bold">Welcome to My Blog</h1>
+        <p class="lead fs-4">Exploring the worlds of DevOps and Cybersecurity.</p>
+    </div>
+</div>
 
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Latest Posts</h2>
+    <div class="row">
+        <% data.forEach(post => { %>
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card post-card h-100 shadow-sm">
+                    <div class="card-body d-flex flex-column">
+                        <a href="/post/<%= post._id %>" class="text-decoration-none text-dark">
+                            <h5 class="card-title"><%= post.title %></h5>
+                        </a>
+                        <p class="card-text text-muted flex-grow-1"><%= post.body.substring(0, 100) %>...</p>
+                        <small class="text-muted"><%= post.createdAt.toDateString() %></small>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+    </div>
     <% if (nextPage !== null) { %>
-    <a href="/?page=<%= nextPage %>" class="pagination">&lt; View Older Posts</a>
+        <div class="text-center mt-4">
+            <a href="/?page=<%= nextPage %>" class="btn btn-primary">&lt; View Older Posts</a>
+        </div>
     <% } %>
-    
-  </section>
+</div>
