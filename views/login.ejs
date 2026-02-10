@@ -1,68 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login</title>
-  <link rel="stylesheet" href="/css/style.css">
-  <style>
-    .btn-google {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #4285F4;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 5px;
-      text-decoration: none;
-      font-size: 16px;
-      margin-top: 10px;
-    }
-    .btn-google img {
-      width: 20px;
-      height: 20px;
-      margin-right: 10px;
-    }
-    .btn-google:hover {
-      background-color: #357ABD;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <!-- Display flash messages -->
-    <% if (messages.success) { %>
-      <div class="alert alert-success">
-        <%= messages.success %>
-      </div>
-    <% } %>
-
-    <% if (messages.error) { %>
-      <div class="alert alert-danger">
-        <%= messages.error %>
-      </div>
-    <% } %>
-
-    <h1>Login</h1>
-    <form action="/login" method="POST">
-      <label for="username">Username:</label>
-      <input type="text" id="username" name="username" required>
-
-      <label for="password">Password:</label>
-      <input type="password" id="password" name="password" required>
-
-      <button type="submit">Login</button>
-    </form>
-
-    <!-- Login with Google button -->
-    <div style="margin-top: 20px;">
-      <a href="/auth/google" class="btn-google">
-        <img src="https://img.icons8.com/color/48/000000/google-logo.png" alt="Google Logo">
-        Login with Google
-      </a>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card post-card shadow-sm">
+                <div class="card-body p-5">
+                    <h1 class="card-title text-center mb-4">Login</h1>
+                    <% if (messages.success) { %>
+                        <div class="alert alert-success"><%= messages.success %></div>
+                    <% } %>
+                    <% if (messages.error) { %>
+                        <div class="alert alert-danger"><%= messages.error %></div>
+                    <% } %>
+                    <form action="/login" method="POST">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </div>
+                    </form>
+                    <hr class="my-4">
+                    <div class="text-center">
+                        <a href="/auth/google" class="btn btn-danger w-100"><i class="fab fa-google me-2"></i> Login with Google</a>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <p>Don't have an account? <a href="/register">Register here</a>.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <p>Don't have an account? <a href="/register">Register here</a>.</p>
-  </div>
-</body>
-</html>
+</div>
