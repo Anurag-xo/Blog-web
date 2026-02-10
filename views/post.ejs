@@ -1,26 +1,80 @@
-<h1><%= data.title %></h1>
-<article class="article">
-  <%- data.body %>
-</article>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="hero-section text-center text-white bg-dark py-5 rounded mb-4">
+                <h1 class="display-4 fw-bold"><%= data.title %></h1>
+                <p class="lead fs-5">Posted on <%= data.createdAt.toDateString() %></p>
+            </div>
 
-<h2>Comments</h2>
-<form action="/comment" method="POST">
-  <input type="hidden" name="postId" value="<%= data._id %>">
-  <textarea name="content" placeholder="Add a comment..." required></textarea>
-  <button type="submit">Submit</button>
-</form>
+            <div class="card post-card shadow-sm mb-4">
+                <div class="card-body">
+                    <article class="article-content">
+                        <%- data.body %>
+                    </article>
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <form action="/post/<%= data._id %>/like" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-outline-danger me-2">
+                                <i class="fas fa-heart"></i> <%= data.likes %>
+                            </button>
+                        </form>
+                        <div>
+                            <span class="me-3">Share on:</span>
+                            <a href="https://www.facebook.com/sharer/sharer.php?u=<%= encodeURIComponent(req.originalUrl) %>" target="_blank" class="btn btn-outline-primary me-2"><i class="fab fa-facebook-f"></i></a>
+                            <a href="https://twitter.com/intent/tweet?url=<%= encodeURIComponent(req.originalUrl) %>&text=<%= encodeURIComponent(data.title) %>" target="_blank" class="btn btn-outline-info me-2"><i class="fab fa-twitter"></i></a>
+                            <a href="https://www.linkedin.com/shareArticle?mini=true&url=<%= encodeURIComponent(req.originalUrl) %>&title=<%= encodeURIComponent(data.title) %>" target="_blank" class="btn btn-outline-primary"><i class="fab fa-linkedin-in"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-<div id="comments">
-  <% if (data.comments && data.comments.length > 0) { %>
-    <% data.comments.forEach(comment => { %>
-      <div class="comment">
-        <p>
-          <strong><%= comment.userId ? comment.userId.username : "Unknown User" %></strong>: 
-          <%= comment.content %>
-        </p>
-      </div>
-    <% }) %>
-  <% } else { %>
-    <p>No comments yet. Be the first to comment!</p>
-  <% } %>
+            <div class="card post-card shadow-sm mt-4">
+                <div class="card-body">
+                    <h2 class="mb-4">Comments</h2>
+                    <form action="/comment" method="POST">
+                        <input type="hidden" name="postId" value="<%= data._id %>">
+                        <div class="mb-3">
+                            <textarea name="content" class="form-control" rows="3" placeholder="Add a comment..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card post-card shadow-sm mt-4">
+                <div class="card-body">
+                    <h3 class="mb-4">All Comments</h3>
+                    <div id="comments">
+                        <% if (data.comments && data.comments.length > 0) { %>
+                            <% data.comments.forEach(comment => { %>
+                                <div class="comment mb-3">
+                                    <p>
+                                        <strong><%= comment.userId ? comment.userId.username : "Unknown User" %>:</strong>
+                                        <%= comment.content %>
+                                    </p>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <p>No comments yet. Be the first to comment!</p>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <% if (relatedPosts && relatedPosts.length > 0) { %>
+            <div class="card post-card shadow-sm mt-4">
+                <div class="card-body">
+                    <h3 class="mb-4">Related Posts</h3>
+                    <div class="list-group">
+                        <% relatedPosts.forEach(post => { %>
+                            <a href="/post/<%= post._id %>" class="list-group-item list-group-item-action">
+                                <%= post.title %>
+                            </a>
+                        <% }) %>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+        </div>
+    </div>
 </div>
